@@ -1,71 +1,42 @@
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let microphoneStream = null;
-let analyserNode = audioCtx.createAnalyser()
-let audioData = new Float32Array(analyserNode.fftSize);;
-let corrolatedSignal = new Float32Array(analyserNode.fftSize);;
-let localMaxima = new Array(10);
-const frequencyDisplayElement = document.querySelector('#frequency');
+import employeeJSON from './employees.json' assert {type: 'json'}
 
+var employees = Object.values(employeeJSON)
+console.log(employees)
+var employeeOutput = document.querySelector('.personel')
 
-function startPitchDetection()
-{
-    navigator.mediaDevices.getUserMedia ({audio: true})
-        .then((stream) =>
-        {
-            microphoneStream = audioCtx.createMediaStreamSource(stream);
-            microphoneStream.connect(analyserNode);
-
-            audioData = new Float32Array(analyserNode.fftSize);
-            corrolatedSignal = new Float32Array(analyserNode.fftSize);
-
-            setInterval(() => {
-                analyserNode.getFloatTimeDomainData(audioData);
-
-                let pitch = getAutocorrolatedPitch();
-
-                frequencyDisplayElement.innerHTML = `${pitch}`;
-            }, 300);
-        })
-        .catch((err) =>
-        {
-            console.log(err);
-        });
+if (typeof employees !== "undefined" && employees.length > 0) {
+    employees.forEach((employee) => {
+        employeeOutput.innerHTML += `
+        <article>
+            <p class="name" >${employee.name}</p>
+            <p class="sirname" >${employee.sirname}</p>
+            <p class="decription" >${employee.job}</p>
+            <section class="controls">
+                <article class="edit"></article>
+                <article class="delete"></article>
+            </section>
+        </article>`
+    });
+} else {
+    employeeOutput.innerHTML += `<p>No employees found</p>`;
 }
 
-function getAutocorrolatedPitch()
-{
-    // First: autocorrolate the signal
+/* CONTROLS */
 
-    let maximaCount = 0;
-
-    for (let l = 0; l < analyserNode.fftSize; l++) {
-        corrolatedSignal[l] = 0;
-        for (let i = 0; i < analyserNode.fftSize - l; i++) {
-            corrolatedSignal[l] += audioData[i] * audioData[i + l];
-        }
-        if (l > 1) {
-            if ((corrolatedSignal[l - 2] - corrolatedSignal[l - 1]) < 0
-                && (corrolatedSignal[l - 1] - corrolatedSignal[l]) > 0) {
-                localMaxima[maximaCount] = (l - 1);
-                maximaCount++;
-                if ((maximaCount >= localMaxima.length))
-                    break;
-            }
-        }
-    }
-
-    // Second: find the average distance in samples between maxima
-
-    let maximaMean = localMaxima[0];
-
-    for (let i = 1; i < maximaCount; i++)
-        maximaMean += localMaxima[i] - localMaxima[i - 1];
-
-    maximaMean /= maximaCount;
-
-    return audioCtx.sampleRate / maximaMean;
-}
-
-var start = document.querySelector('button')
-
-start.addEventListener("click", startPitchDetection)
+// const editEmployees = document.querySelectorAll('.edit')
+// editEmployees.forEach(editEmployee => {
+//     editEmployee.addEventListener('click', x =>
+//         editEmployee.parentNode.parentNode.childNodes.forEach(editNode => {
+//             if(document.querySelectorAll('.temp').length>4){
+//                 confirm('You still have unsaved changes, are you sure you want to progress?')
+//             } else {
+//                 if(editNode.tagName === 'P'){
+//                     var editInput = document.createElement('input')
+//                     editInput.classList.add('temp')
+//                     editInput.value = editNode.innerHTML
+//                     editNode.parentNode.replaceChild(editInput, editNode)
+//                 }
+//             }
+//         })
+//     )
+// })
